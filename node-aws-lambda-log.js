@@ -22,14 +22,23 @@ if ( _.isUndefined ( functionName ) ) {
 
 hl ( cwl.describeLogStreamsAsync ( { logGroupName: '/aws/lambda/' + functionName } ) )
 
-.map ( function ( response ) {
+/*.map ( function ( response ) {
     return _.reduce ( response.logStreams, function ( latestLogStream, logStream ) {
         return ( latestLogStream.lastIngestionTime < logStream.lastIngestionTime ) ? logStream : latestLogStream;
     } );
+} )*/
+
+.flatMap ( function ( response ) {
+    return hl ( _.sortBy ( response.logStreams, function ( logStream ) {
+        return logStream.lastIngestionTime;
+    } ) );
 } )
 
 .flatMap ( function ( latestLogStream ) {
-    return hl ( cwl.getLogEventsAsync ( { logGroupName: '/aws/lambda/' + functionName, logStreamName: latestLogStream.logStreamName } ) )
+    return hl ( cwl.getLogEventsAsync ( {
+        logGroupName: '/aws/lambda/' + functionName,
+        logStreamName: latestLogStream.logStreamName
+    } ) )
 
     .flatMap ( function ( response ) {
         return hl ( response.events );
