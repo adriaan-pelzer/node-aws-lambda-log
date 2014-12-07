@@ -23,5 +23,12 @@
   "license": "BSD-2-Clause",
   "bugs": {
     "url": "https://github.com/adriaan-pelzer/node-aws-lambda-log/issues"
+  },
+  "dependencies": {
+    "bluebird": "~2.3.11",
+    "highland": "~2.1.0",
+    "lodash": "~2.4.1",
+    "minimist": "~1.1.0",
+    "aws-sdk": "~2.0.30"
   }
 }
