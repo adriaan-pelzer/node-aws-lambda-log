@@ -5,12 +5,12 @@ var hl = require ( 'highland' );
 var _ = require ( 'lodash' );
 var args = require ( 'minimist' )( process.argv );
 var aws = require ( 'aws-sdk' );
-var cwl = bb.promisifyAll ( new aws.CloudWatchLogs ( { region: args.region || 'eu-west-1' } ) );
+var cwl = bb.promisifyAll ( new aws.CloudWatchLogs ( { region: args.r || args.region || 'eu-west-1' } ) );
 
 var functionName = args.f || args.function;
 
 if ( _.isUndefined ( functionName ) ) {
-    console.log ( 'Usage: node aws-lambda-log.js -r|--region <aws region> -f|--function <functionName>' );
+    console.log ( 'Usage: aws-lambda-log -r|--region <aws region> -f|--function <functionName>' );
     console.log ( 'Display logs from the latest updated cloudwatch logstream associated with the Lambda function specified' );
     console.log ( '' );
     console.log ( 'AWS credentials should be configured in ~/.aws/credentials as such:' );
