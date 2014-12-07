@@ -4,7 +4,7 @@
   "description": "Get latest updates logstream for an AWS Lambda function from CloudWatch, and display all the Events in the Stream",
   "preferGlobal": "true",
   "bin": {
-    "node-binary": "node-aws-lambda-log.js"
+    "aws-lambda-log": "node-aws-lambda-log.js"
   },
   "main": "node-aws-lambda-log.js",
   "scripts": {
