@@ -1,6 +1,6 @@
 {
   "name": "node-aws-lambda-log",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Get latest updates logstream for an AWS Lambda function from CloudWatch, and display all the Events in the Stream",
   "preferGlobal": "true",
   "bin": {
