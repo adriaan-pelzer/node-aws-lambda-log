@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 var bb = require ( 'bluebird' );
 var hl = require ( 'highland' );
 var _ = require ( 'lodash' );
