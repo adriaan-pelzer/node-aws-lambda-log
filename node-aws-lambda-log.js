@@ -7,10 +7,10 @@ var args = require ( 'minimist' )( process.argv );
 var aws = require ( 'aws-sdk' );
 var cwl = bb.promisifyAll ( new aws.CloudWatchLogs ( { region: args.r || args.region || 'eu-west-1' } ) );
 
-var functionName = args.f || args.function;
+var logStreams, functionName = args.f || args.function;
 
 if ( _.isUndefined ( functionName ) ) {
-    console.log ( 'Usage: aws-lambda-log -r|--region <aws region> -f|--function <functionName>' );
+    console.log ( 'Usage: aws-lambda-log -r|--region <aws region> -f|--function <functionName> -d|--delete' );
     console.log ( 'Display logs from the latest updated cloudwatch logstream associated with the Lambda function specified' );
     console.log ( '' );
     console.log ( 'AWS credentials should be configured in ~/.aws/credentials as such:' );
@@ -20,37 +20,54 @@ if ( _.isUndefined ( functionName ) ) {
     process.exit ( 1 );
 }
 
-hl ( cwl.describeLogStreamsAsync ( { logGroupName: '/aws/lambda/' + functionName } ) )
+logStreams = hl ( cwl.describeLogStreamsAsync ( { logGroupName: '/aws/lambda/' + functionName } ) );
 
-/*.map ( function ( response ) {
-    return _.reduce ( response.logStreams, function ( latestLogStream, logStream ) {
-        return ( latestLogStream.lastIngestionTime < logStream.lastIngestionTime ) ? logStream : latestLogStream;
+if ( args.d || args.delete ) {
+    logStreams.flatMap ( function ( response ) {
+        return hl ( _.sortBy ( response.logStreams, function ( logStream ) {
+            return logStream.lastIngestionTime;
+        } ) );
+    } )
+
+    .flatMap ( function ( latestLogStream ) {
+        return hl ( cwl.deleteLogStreamAsync ( {
+            logGroupName: '/aws/lambda/' + functionName,
+            logStreamName: latestLogStream.logStreamName
+        } ) );
+    } )
+
+    .errors ( function ( error, push ) {
+        console.error ( error );
+    } )
+
+    .toArray ( function ( responses ) {
+        console.log ( 'Deleted ' + responses.length + ' logStreams' );
     } );
-} )*/
+} else {
+    logStreams.flatMap ( function ( response ) {
+        return hl ( _.sortBy ( response.logStreams, function ( logStream ) {
+            return logStream.lastIngestionTime;
+        } ) );
+    } )
 
-.flatMap ( function ( response ) {
-    return hl ( _.sortBy ( response.logStreams, function ( logStream ) {
-        return logStream.lastIngestionTime;
-    } ) );
-} )
+    .flatMap ( function ( latestLogStream ) {
+        return hl ( cwl.getLogEventsAsync ( {
+            logGroupName: '/aws/lambda/' + functionName,
+            logStreamName: latestLogStream.logStreamName
+        } ) )
 
-.flatMap ( function ( latestLogStream ) {
-    return hl ( cwl.getLogEventsAsync ( {
-        logGroupName: '/aws/lambda/' + functionName,
-        logStreamName: latestLogStream.logStreamName
-    } ) )
+        .flatMap ( function ( response ) {
+            return hl ( response.events );
+        } );
+    } )
 
-    .flatMap ( function ( response ) {
-        return hl ( response.events );
-    } );
-} )
+    .errors ( function ( error, push ) {
+        console.error ( error );
+    } )
 
-.errors ( function ( error, push ) {
-    console.error ( error );
-} )
+    .map ( function ( log ) {
+        return ( new Date ( log.timestamp ) ).toISOString () + ': ' + log.message;
+    } )
 
-.map ( function ( log ) {
-    return ( new Date ( log.timestamp ) ).toISOString () + ': ' + log.message;
-} )
-
-.each ( console.log );
+    .each ( console.log );
+}
